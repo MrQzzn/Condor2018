@@ -1,86 +1,153 @@
-/*----------------------------------------------------------------------------*/
-/* Copyright (c) 2017-2018 FIRST. All Rights Reserved.                        */
-/* Open Source Software - may be modified and shared by FRC teams. The code   */
-/* must be accompanied by the FIRST BSD license file in the root directory of */
-/* the project.                                                               */
-/*----------------------------------------------------------------------------*/
-
 package org.usfirst.frc.team5895.robot;
 
+import java.util.HashMap;
+
+import org.usfirst.frc.team5895.robot.auto.*;
+import org.usfirst.frc.team5895.robot.framework.Looper;
+import org.usfirst.frc.team5895.robot.framework.Recorder;
+import org.usfirst.frc.team5895.robot.lib.BetterJoystick;
+
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.PowerDistributionPanel;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-/**
- * The VM is configured to automatically run this class, and to call the
- * functions corresponding to each mode, as described in the IterativeRobot
- * documentation. If you change the name of this class or the package after
- * creating this project, you must also update the build.properties file in the
- * project.
- */
 public class Robot extends IterativeRobot {
-	private static final String kDefaultAuto = "Default";
-	private static final String kCustomAuto = "My Auto";
-	private String m_autoSelected;
-	private SendableChooser<String> m_chooser = new SendableChooser<>();
 
-	/**
-	 * This function is run when the robot is first started up and should be
-	 * used for any initialization code.
-	 */
-	@Override
+	Looper loop;
+	Intake intake;
+	Drivetrain drive;
+	Arm arm;
+	GameData gameData;
+	PowerDistributionPanel pdp;
+	
+	boolean fastShoot = false;
+	boolean isDown = false;
+
+	Recorder r;
+	HashMap<String, Runnable> autoRoutines;
+	
+	BetterJoystick leftJoystick;
+	BetterJoystick rightJoystick;
+	BetterJoystick operatorJoystick;
+
 	public void robotInit() {
-		m_chooser.addDefault("Default Auto", kDefaultAuto);
-		m_chooser.addObject("My Auto", kCustomAuto);
-		SmartDashboard.putData("Auto choices", m_chooser);
-	}
-
-	/**
-	 * This autonomous (along with the chooser code above) shows how to select
-	 * between different autonomous modes using the dashboard. The sendable
-	 * chooser code works with the Java SmartDashboard. If you prefer the
-	 * LabVIEW Dashboard, remove all of the chooser code and uncomment the
-	 * getString line to get the auto name from the text box below the Gyro
-	 *
-	 * <p>You can add additional auto modes by adding additional comparisons to
-	 * the switch structure below with additional strings. If using the
-	 * SendableChooser make sure to add them to the chooser code above as well.
-	 */
-	@Override
-	public void autonomousInit() {
-		m_autoSelected = m_chooser.getSelected();
-		// autoSelected = SmartDashboard.getString("Auto Selector",
-		// defaultAuto);
-		System.out.println("Auto selected: " + m_autoSelected);
-	}
-
-	/**
-	 * This function is called periodically during autonomous.
-	 */
-	@Override
-	public void autonomousPeriodic() {
-		switch (m_autoSelected) {
-			case kCustomAuto:
-				// Put custom auto code here
-				break;
-			case kDefaultAuto:
-			default:
-				// Put default auto code here
-				break;
+		
+		leftJoystick = new BetterJoystick(0);
+		rightJoystick = new BetterJoystick(1);
+		operatorJoystick = new BetterJoystick(2);
+		
+		intake = new Intake();
+		drive = new Drivetrain();
+		gameData = new GameData();
+		pdp = new PowerDistributionPanel();
+		
+		//set up recorder
+		r = new Recorder(10);
+		r.add("Time", Timer::getFPGATimestamp);
+		r.add("Drive Distance", drive::getDistanceTraveled);
+		r.add("Drive Velocity", drive::getVelocity);
+/*		r.add("Drive Left Velocity", drive::getLeftVelocity);
+		r.add("Drive Right Velocity", drive::getRightVelocity);
+		r.add("Intake LeftClawSensor", intake::getLeftVoltage);
+		r.add("Intake RightClawSensor", intake::getRightVoltage);
+		r.add("Intake State", intake::getState);
+		for (int i = 0; i < 16; i++) {
+			final int x = i;
+			r.add("Current " + i, () -> pdp.getCurrent(x));
 		}
+		r.add("Auto Routine", gameData::getAutoRoutine);
+		r.add("Game Data", gameData::getGameData);
+*/		
+		loop = new Looper(10);
+		loop.add(intake::update);
+		loop.add(drive::update);
+//		loop.add(r::record);
+		loop.start();
+		
+		//set up auto map
+		autoRoutines = new HashMap<String, Runnable>();
+		autoRoutines.put("S00", () -> S00.run(drive, intake));
+		autoRoutines.put("CR0", () -> CR0.run(drive, intake));
+		autoRoutines.put("CL0", () -> CL0.run(drive, intake));
+		
+		autoRoutines.put("L0R", () -> L0R.run(drive, intake));
+		autoRoutines.put("L0L", () -> L0L.run(drive, intake));
+		autoRoutines.put("R0R", () -> R0R.run(drive, intake));
+		autoRoutines.put("R0L", () -> R0L.run(drive, intake));
+		
+		autoRoutines.put("LLL", () -> LLL.run(drive, intake));
+		autoRoutines.put("LRL", () -> LLL.run(drive, intake));
+		autoRoutines.put("LRR", () -> L0D.run(drive, intake));
+		autoRoutines.put("LLR", () -> L0D.run(drive, intake));
+		
+		autoRoutines.put("RRR", () -> RRR.run(drive, intake));
+		autoRoutines.put("RLL", () -> R0L.run(drive, intake));
+		autoRoutines.put("RLR", () -> RRR.run(drive, intake));
+		autoRoutines.put("RRL", () -> R0L.run(drive, intake));
+		
 	}
 
-	/**
-	 * This function is called periodically during operator control.
-	 */
-	@Override
+	public void autonomousInit() {
+		
+//		r.startRecording();
+//		drive.resetNavX();
+//		drive.autoForwardStraight();
+		String autoRoutine = gameData.getAutoRoutine();
+		
+		DriverStation.reportError("" + gameData.getAutoRoutine(), false);
+		
+		if (autoRoutines.containsKey(autoRoutine)) {
+			autoRoutines.get(autoRoutine).run();
+		} else {
+			DriverStation.reportError("Auto Error: " + autoRoutine, false);
+			S00.run(drive, intake);
+		}	
+	}
+
 	public void teleopPeriodic() {
+
+		DriverStation.reportError("" + intake.getLeftVoltage(), false);
+		
+		//teleop drive
+		drive.arcadeDrive(leftJoystick.getRawAxis(1), rightJoystick.getRawAxis(0));
+		
+		//left joystick controls
+		if(leftJoystick.getRisingEdge(1)) {
+			if(arm.getAngle()) { //need to figure out arm
+				intake.openIntaking();
+			}
+			else {
+				intake.drop();
+			}	
+		} else if(leftJoystick.getFallingEdge(2)) {
+			intake.intake();
+		}
+		
+		//right joystick controls
+		if(rightJoystick.getRisingEdge(1)) {
+			if(fastShoot) {
+				intake.ejectCustom(SmartDashboard.getNumber("DB/Slider 0", 1.0));
+			} else {
+				intake.ejectSlow();
+			}		
+		}
+	
+		//operator joystick controls
+		if(operatorJoystick.getRisingEdge(3)) {
+			fastShoot = true;
+		} else if(operatorJoystick.getRisingEdge(4)) {
+			fastShoot = false;
+		}
+		
 	}
 
-	/**
-	 * This function is called periodically during test mode.
-	 */
-	@Override
-	public void testPeriodic() {
+	public void disabledInit() {
+//		r.stopRecording();
+		drive.arcadeDrive(0, 0);
 	}
+
 }
