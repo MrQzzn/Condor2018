@@ -17,7 +17,7 @@ public class Intake {
 	private double lastTime;
 	private boolean isClamped, isTensioned;
 	public boolean isDown;
-	private Solenoid clawSolenoid, clampSolenoid, tensionSolenoid;
+	private Solenoid clampSolenoid, tensionSolenoid;
 	private double ejectSpeed;
 	
 	public Intake() {
@@ -26,13 +26,9 @@ public class Intake {
 		
 		leftClawSensor = new AnalogInput(ElectricalLayout.SENSOR_INTAKE_LEFT);
 		rightClawSensor = new AnalogInput(ElectricalLayout.SENSOR_INTAKE_RIGHT);
-		
 
-		clawSolenoid = new Solenoid(ElectricalLayout.SOLENOID_INTAKE_CLAW);
 		clampSolenoid = new Solenoid(ElectricalLayout.SOLENOID_INTAKE_CLAMP);
 		tensionSolenoid = new Solenoid(ElectricalLayout.SOLENOID_INTAKE_TENSION);
-
-	    isDown = false;
 	    
 		leftClawMotor.setInverted(true);
 		rightClawMotor.setInverted(false);
@@ -83,22 +79,6 @@ public class Intake {
 	 */
 	public void disable(){
 		mode = Mode_Type.DISABLED;
-	}
-	
-	/**
-	 * lifts claw
-	 */
-	public void up() {
-		isDown = false;
-		mode = Mode_Type.HOLDING;
-	}
-	
-	/**
-	 * drops claw
-	 */
-	public void down(){
-		isDown = true;
-		mode = Mode_Type.INTAKING;
 	}
 	
 	public boolean hasCube() {
@@ -190,7 +170,6 @@ public class Intake {
 		leftClawMotor.set(ControlMode.PercentOutput, leftSpeed);
 		rightClawMotor.set(ControlMode.PercentOutput, rightSpeed);
 		
-		clawSolenoid.set(isDown);
 		clampSolenoid.set(isClamped);
 		tensionSolenoid.set(isTensioned);
 		
