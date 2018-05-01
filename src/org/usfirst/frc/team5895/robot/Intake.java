@@ -16,7 +16,6 @@ public class Intake {
 	private double leftSpeed, rightSpeed;
 	private double lastTime;
 	private boolean isClamped, isTensioned;
-	public boolean isDown;
 	private Solenoid clampSolenoid, tensionSolenoid;
 	private double ejectSpeed;
 	
@@ -47,18 +46,9 @@ public class Intake {
 		}
 	
 	/**
-	 * ejects a cube at full speed
-	 */
-	public void ejectFast(){
-		ejectSpeed = 1.0;
-		mode= Mode_Type.EJECTING;
-		lastTime = Timer.getFPGATimestamp();
-		}
-	
-	/**
 	 * ejects a cube at half speed
 	 */
-	public void ejectSlow() {
+	public void eject() {
 		ejectSpeed = 0.55;
 		mode= Mode_Type.EJECTING;
 		lastTime = Timer.getFPGATimestamp();

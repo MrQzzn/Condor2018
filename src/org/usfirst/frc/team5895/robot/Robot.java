@@ -18,29 +18,24 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends IterativeRobot {
 
 	Looper loop;
+	Arm arm;
 	Intake intake;
 	Drivetrain drive;
-	Arm arm;
 	GameData gameData;
 	PowerDistributionPanel pdp;
-	
-	boolean fastShoot = false;
-	boolean isDown = false;
-
 	Recorder r;
 	HashMap<String, Runnable> autoRoutines;
 	
 	BetterJoystick leftJoystick;
 	BetterJoystick rightJoystick;
-	BetterJoystick operatorJoystick;
 
 	public void robotInit() {
 		
 		leftJoystick = new BetterJoystick(0);
 		rightJoystick = new BetterJoystick(1);
-		operatorJoystick = new BetterJoystick(2);
-		
+
 		intake = new Intake();
+		arm = new Arm();
 		drive = new Drivetrain();
 		gameData = new GameData();
 		pdp = new PowerDistributionPanel();
@@ -64,6 +59,7 @@ public class Robot extends IterativeRobot {
 */		
 		loop = new Looper(10);
 		loop.add(intake::update);
+		loop.add(arm::update);
 		loop.add(drive::update);
 //		loop.add(r::record);
 		loop.start();
@@ -117,7 +113,7 @@ public class Robot extends IterativeRobot {
 		
 		//left joystick controls
 		if(leftJoystick.getRisingEdge(1)) {
-			if(arm.getAngle()) { //need to figure out arm
+			if((arm.getAngle() < 45.0 && arm.getAngle() > 0.0) || (arm.getAngle() < 180.0 && arm.getAngle() > 135.0)) {
 				intake.openIntaking();
 			}
 			else {
@@ -126,23 +122,23 @@ public class Robot extends IterativeRobot {
 		} else if(leftJoystick.getFallingEdge(2)) {
 			intake.intake();
 		}
+		else if(leftJoystick.getRisingEdge(3)) {
+			arm.setTargetAngle(0.0);
+		}
+		else if(leftJoystick.getRisingEdge(4)) {
+			arm.setTargetAngle(180.0);
+		}
 		
 		//right joystick controls
 		if(rightJoystick.getRisingEdge(1)) {
-			if(fastShoot) {
-				intake.ejectCustom(SmartDashboard.getNumber("DB/Slider 0", 1.0));
-			} else {
-				intake.ejectSlow();
-			}		
+				intake.eject();		
+		} else if(rightJoystick.getRisingEdge(2)) {
+			arm.setTargetAngle(45.0);
+		} else if(rightJoystick.getRisingEdge(3)) {
+			arm.setTargetAngle(90.0);
+		} else if(rightJoystick.getRisingEdge(4)) {
+			arm.setTargetAngle(135.0);
 		}
-	
-		//operator joystick controls
-		if(operatorJoystick.getRisingEdge(3)) {
-			fastShoot = true;
-		} else if(operatorJoystick.getRisingEdge(4)) {
-			fastShoot = false;
-		}
-		
 	}
 
 	public void disabledInit() {

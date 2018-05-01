@@ -61,6 +61,13 @@ public class Drivetrain {
 		rightDriveFollower1 = new VictorSPX(ElectricalLayout.MOTOR_DRIVE_RIGHT_FOLLOWER_1);
 		rightDriveFollower2 = new VictorSPX(ElectricalLayout.MOTOR_DRIVE_RIGHT_FOLLOWER_2);
 			
+		/* if master/follower works
+		 * leftDriveFollower1.follow(leftDriveMaster);
+		leftDriveFollower2.follow(leftDriveMaster);
+		rightDriveFollower1.follow(rightDriveMaster);
+		rightDriveFollower2.follow(rightDriveMaster);
+		 */
+		
 		//initialize encoders
 		leftEncoder = new BetterEncoder(ElectricalLayout.ENCODER_DRIVE_LEFT_1, ElectricalLayout.ENCODER_DRIVE_LEFT_2, true, Encoder.EncodingType.k4X);
 		rightEncoder = new BetterEncoder(ElectricalLayout.ENCODER_DRIVE_RIGHT_1, ElectricalLayout.ENCODER_DRIVE_RIGHT_2, false, Encoder.EncodingType.k4X);
